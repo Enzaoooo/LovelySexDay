@@ -1,6 +1,6 @@
 {
   "homepage": "https://Enzaoooo.github.io/LovelySexDay",
-  "name": "LovelySexDay",
+  "name": "lovelysexday",
   "version": "1.0.0",
   "private": true,
   "description": "",
@@ -9,7 +9,7 @@
     "dev": "vite",
     "build": "vite build",
     "predeploy": "npm run build --prefix project",
-    "deploy": "gh-pages -d project/dist",
+    "deploy": "gh-pages-clean && gh-pages --no-history -d project/dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
