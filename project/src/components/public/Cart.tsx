@@ -32,7 +32,7 @@ export function Cart({ onBack }: CartProps) {
 
   const handleWhatsAppRedirect = () => {
     const message = generateWhatsAppMessage();
-    const whatsappUrl = `https://wa.me/5512982226485?text=${message}`;
+    const whatsappUrl = `https://wa.me/${state.config.whatsappNumber.replace(/\D/g, '')}?text=${message}`;
     window.open(whatsappUrl, '_blank');
   };
 

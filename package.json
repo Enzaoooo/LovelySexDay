@@ -1,12 +1,17 @@
 {
-  "name": "lovely-sex-day---apresentar",
+  "homepage": "https://Enzaoooo.github.io/LovelySexDay",
+  "name": "LovelySexDay",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "index.js",
- "scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "dev": "vite"
-},
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "predeploy": "npm run build --prefix project",
+    "deploy": "gh-pages -d project/dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -15,6 +20,7 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "vite": "^7.1.6"
   }
 }
