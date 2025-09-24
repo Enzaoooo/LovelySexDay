@@ -48,7 +48,7 @@ export function AdminCategories() {
   };
 
   const handleDelete = (categoryId: string) => {
-    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
       dispatch({ type: 'DELETE_CATEGORY', payload: categoryId });
     }
   };

@@ -1,22 +1,13 @@
+// Tipos principais da aplicação
 export interface Product {
   id: string;
   name: string;
-  price: number;
   description: string;
-  shortDescription: string;
+  price: number;
+  image: string;
   category: string;
-  images: string[];
-  specifications: Record<string, string>;
-  usage: string;
-  status: 'active' | 'inactive';
-  featured: boolean;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  image?: string;
+  views: number;
+  featured?: boolean;
 }
 
 export interface CartItem {
@@ -24,14 +15,30 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  image: string;
+  productCount: number;
+}
+
+export interface CarouselItem {
+  id: string;
+  image: string;
+  title: string;
+  description: string;
+  link?: string;
+}
+
 export interface Admin {
   id: string;
   username: string;
+  password: string; // Em produção, seria hash
   email: string;
+  createdAt: string;
 }
 
-export interface AppConfig {
-  whatsappNumber: string;
-  storeName: string;
-  storeDescription: string;
+export interface AdminSession {
+  isAuthenticated: boolean;
+  admin: Admin | null;
 }

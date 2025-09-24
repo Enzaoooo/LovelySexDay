@@ -1,140 +1,200 @@
-import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
-import { useInitialData } from './hooks/useInitialData';
+import React, { useState, useEffect } from 'react';
+import { Layout } from './components/Layout';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
+import { Cart } from './components/Cart';
+import { ProductModal } from './components/ProductModal';
+import { HomePage } from './pages/HomePage';
+import { CategoryPage } from './pages/CategoryPage';
+import { AdminLogin } from './pages/AdminLogin';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { useCart } from './hooks/useCart';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { useProductMetrics } from './hooks/useProductMetrics';
+import { 
+  initialProducts, 
+  categories, 
+  initialCarouselItems, 
+  initialAdmin 
+} from './data/initialData';
+import { Product, Category, CarouselItem, Admin, AdminSession } from './types';
 
-// Public components
-import { Header } from './components/common/Header';
-import { Footer } from './components/common/Footer';
-import { HomePage } from './components/public/HomePage';
-import { ProductGrid } from './components/public/ProductGrid';
-import { ProductDetail } from './components/public/ProductDetail';
-import { Cart } from './components/public/Cart';
+type AppView = 'home' | 'category' | 'admin-login' | 'admin-dashboard';
 
-// Admin components
-import { AdminLogin } from './components/admin/AdminLogin';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-
-import { Product } from './types';
-
-type View = 'home' | 'products' | 'product' | 'cart' | 'admin';
-
-function AppContent() {
-  const { state, dispatch } = useApp();
-  const [currentView, setCurrentView] = useState<View>('home');
+function App() {
+  // State management
+  const [currentView, setCurrentView] = useState<AppView>('home');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isAdminRoute, setIsAdminRoute] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
-  useInitialData();
+  // Data state with localStorage persistence
+  const [products, setProducts] = useLocalStorage<Product[]>('products', initialProducts);
+  const [carouselItems, setCarouselItems] = useLocalStorage<CarouselItem[]>('carousel', initialCarouselItems);
+  const [admins, setAdmins] = useLocalStorage<Admin[]>('admins', [initialAdmin]);
+  const [whatsappNumber, setWhatsappNumber] = useLocalStorage<string>('whatsappNumber', '(12) 98222-6485');
+  
+  // Admin session
+  const [adminSession, setAdminSession] = useState<AdminSession>({
+    isAuthenticated: false,
+    admin: null
+  });
 
-  // Check if we're on admin route
-  React.useEffect(() => {
-    const path = window.location.pathname;
-    if (path.startsWith('/admin')) {
-      setIsAdminRoute(true);
+  // Custom hooks
+  const cart = useCart();
+  const { incrementView, getProductViews, getMostViewedProducts } = useProductMetrics();
+
+  // Initialize data if empty
+  useEffect(() => {
+    if (products.length === 0) {
+      setProducts(initialProducts);
+    }
+    if (carouselItems.length === 0) {
+      setCarouselItems(initialCarouselItems);
+    }
+    if (admins.length === 0) {
+      setAdmins([initialAdmin]);
     }
   }, []);
 
-  const handleAddToCart = (product: Product, quantity = 1) => {
-    for (let i = 0; i < quantity; i++) {
-      dispatch({ type: 'ADD_TO_CART', payload: product });
-    }
-  };
+  // Derived data
+  const featuredProducts = products.filter(p => p.featured);
+  const mostViewedProducts = getMostViewedProducts(products, 6);
 
-  const handleCategorySelect = (categoryId: string | null) => {
-    setSelectedCategoryId(categoryId);
-    setCurrentView('products');
+  // Event handlers
+  const handleCategoryClick = (category: Category) => {
+    setSelectedCategory(category);
+    setCurrentView('category');
   };
 
   const handleProductClick = (product: Product) => {
+    incrementView(product.id);
     setSelectedProduct(product);
-    setCurrentView('product');
+    setIsProductModalOpen(true);
   };
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      setCurrentView('products');
-    }
+  const handleAddToCart = (product: Product) => {
+    cart.addToCart(product);
   };
+
+  const handleBackToHome = () => {
+    setSelectedCategory(null);
+    setCurrentView('home');
+  };
+
+  // Admin functions
+  const handleAdminLogin = (username: string, password: string): boolean => {
+    const admin = admins.find(a => a.username === username && a.password === password);
+    if (admin) {
+      setAdminSession({ isAuthenticated: true, admin });
+      setCurrentView('admin-dashboard');
+      return true;
+    }
+    return false;
+  };
+
+  const handleAdminLogout = () => {
+    setAdminSession({ isAuthenticated: false, admin: null });
+    setCurrentView('home');
+  };
+
+  // Get products by category
+  const getCategoryProducts = (categoryName: string) => {
+    return products.filter(p => p.category === categoryName);
+  };
+
+  // Check for admin access
+  useEffect(() => {
+    const isAdminPath = window.location.pathname === '/LovelySexDay/admin';
+    if (isAdminPath) {
+      setCurrentView(adminSession.isAuthenticated ? 'admin-dashboard' : 'admin-login');
+    }
+  }, [adminSession.isAuthenticated]);
 
   // Admin routes
-  if (isAdminRoute) {
-    if (!state.isAuthenticated) {
-      return <AdminLogin />;
-    }
-    return <AdminDashboard />;
+  if (currentView === 'admin-login') {
+    return <AdminLogin onLogin={handleAdminLogin} />;
   }
 
-  // Public routes
-  const renderCurrentView = () => {
-    switch (currentView) {
-      case 'products':
-        return (
-          <ProductGrid
-            products={state.products}
-            categories={state.categories}
-            selectedCategoryId={selectedCategoryId}
-            searchQuery={searchQuery}
-            onProductClick={handleProductClick}
-            onAddToCart={handleAddToCart}
-          />
-        );
-      case 'product':
-        return selectedProduct ? (
-          <ProductDetail
-            product={selectedProduct}
-            onAddToCart={handleAddToCart}
-            onBack={() => setCurrentView('products')}
-          />
-        ) : (
-          <HomePage
-            products={state.products}
-            categories={state.categories}
-            onCategoryClick={handleCategorySelect}
-            onProductClick={handleProductClick}
-            onAddToCart={handleAddToCart}
-          />
-        );
-      case 'cart':
-        return <Cart onBack={() => setCurrentView('home')} />;
-      default:
-        return (
-          <HomePage
-            products={state.products}
-            categories={state.categories}
-            onCategoryClick={handleCategorySelect}
-            onProductClick={handleProductClick}
-            onAddToCart={handleAddToCart}
-          />
-        );
-    }
-  };
+  if (currentView === 'admin-dashboard') {
+    return (
+      <AdminDashboard
+        products={products}
+        categories={categories}
+        carouselItems={carouselItems}
+        admins={admins}
+        whatsappNumber={whatsappNumber}
+        onUpdateProducts={setProducts}
+        onUpdateCategories={() => {}} // Categories are static for now
+        onUpdateCarousel={setCarouselItems}
+        onUpdateAdmins={setAdmins}
+        onUpdateWhatsappNumber={setWhatsappNumber}
+        onLogout={handleAdminLogout}
+        getProductViews={getProductViews}
+      />
+    );
+  }
 
+  // Main app layout
   return (
-    <div className="min-h-screen bg-black">
-      <Header
-        onCategorySelect={handleCategorySelect}
-        onSearchChange={handleSearchChange}
-        onCartClick={() => setCurrentView('cart')}
-        categories={state.categories}
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-amber-50 to-orange-50">
+      <Header 
+        cartItemsCount={cart.getCartItemsCount()} 
+        onCartClick={() => setIsCartOpen(true)} 
       />
       
-      <main>
-        {renderCurrentView()}
+      <main className="flex-1">
+        {currentView === 'home' && (
+          <HomePage
+            carouselItems={carouselItems}
+            categories={categories}
+            allProducts={products}
+            featuredProducts={featuredProducts}
+            mostViewedProducts={mostViewedProducts}
+            onCategoryClick={handleCategoryClick}
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+            getProductViews={getProductViews}
+          />
+        )}
+
+        {currentView === 'category' && selectedCategory && (
+          <CategoryPage
+            category={selectedCategory}
+            products={getCategoryProducts(selectedCategory.name)}
+            onBack={handleBackToHome}
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+            getProductViews={getProductViews}
+          />
+        )}
       </main>
 
-      {currentView !== 'cart' && <Footer />}
-    </div>
-  );
-}
+      <Footer whatsappNumber={whatsappNumber} />
 
-function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+      {/* Cart Modal */}
+      <Cart
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cart.cartItems}
+        onUpdateQuantity={cart.updateQuantity}
+        onRemoveItem={cart.removeFromCart}
+        total={cart.getCartTotal()}
+        onClearCart={cart.clearCart}
+      />
+
+      {/* Product Modal */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        onAddToCart={handleAddToCart}
+        views={selectedProduct ? getProductViews(selectedProduct.id) : 0}
+      />
+
+      {/* Admin button removed */}
+    </div>
   );
 }
 
