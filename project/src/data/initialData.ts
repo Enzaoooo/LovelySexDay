@@ -61,13 +61,13 @@ export const initialProducts: Product[] = [
   }
 ];
 
-export const categories: Category[] = [
+export const initialCategories: Category[] = [
   { id: '1', name: 'Acessórios', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop', productCount: 0 },
   { id: '2', name: 'Cosméticos', image: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300&h=200&fit=crop', productCount: 0 },
   { id: '3', name: 'Fantasias', image: 'https://images.unsplash.com/photo-1594736797933-d0361ba4d295?w=300&h=200&fit=crop', productCount: 0 },
   { id: '4', name: 'Masturbadores', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop', productCount: 0 },
   { id: '5', name: 'Para uso Anal', image: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&h=200&fit=crop', productCount: 0 },
-  { id: '6', name: 'Próteses', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop', productCount: 0 },
+  { id: '6', name: 'Próteses', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop', productCount: 0 },
   { id: '7', name: 'Sado', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=200&fit=crop', productCount: 0 },
   { id: '8', name: 'Vibradores', image: 'https://images.unsplash.com/photo-1585652757289-da1943421815?w=300&h=200&fit=crop', productCount: 0 }
 ];

@@ -13,7 +13,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useProductMetrics } from './hooks/useProductMetrics';
 import { 
   initialProducts, 
-  categories, 
+  initialCategories, 
   initialCarouselItems, 
   initialAdmin 
 } from './data/initialData';
@@ -31,6 +31,7 @@ function App() {
 
   // Data state with localStorage persistence
   const [products, setProducts] = useLocalStorage<Product[]>('products', initialProducts);
+  const [categories, setCategories] = useLocalStorage<Category[]>('categories', initialCategories);
   const [carouselItems, setCarouselItems] = useLocalStorage<CarouselItem[]>('carousel', initialCarouselItems);
   const [admins, setAdmins] = useLocalStorage<Admin[]>('admins', [initialAdmin]);
   const [whatsappNumber, setWhatsappNumber] = useLocalStorage<string>('whatsappNumber', '(12) 98222-6485');
@@ -49,6 +50,9 @@ function App() {
   useEffect(() => {
     if (products.length === 0) {
       setProducts(initialProducts);
+    }
+    if (categories.length === 0) {
+      setCategories(initialCategories);
     }
     if (carouselItems.length === 0) {
       setCarouselItems(initialCarouselItems);
@@ -126,7 +130,7 @@ function App() {
         admins={admins}
         whatsappNumber={whatsappNumber}
         onUpdateProducts={setProducts}
-        onUpdateCategories={() => {}} // Categories are static for now
+        onUpdateCategories={setCategories}
         onUpdateCarousel={setCarouselItems}
         onUpdateAdmins={setAdmins}
         onUpdateWhatsappNumber={setWhatsappNumber}

@@ -46,10 +46,12 @@ export function AdminDashboard({
 }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'categories' | 'carousel' | 'admins' | 'settings'>('dashboard');
   const [showProductForm, setShowProductForm] = useState(false);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showCarouselForm, setShowCarouselForm] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [showEditAdminForm, setShowEditAdminForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingCarousel, setEditingCarousel] = useState<CarouselItem | null>(null);
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
   const [whatsappInput, setWhatsappInput] = useState(whatsappNumber);
@@ -62,6 +64,12 @@ export function AdminDashboard({
     image: '',
     category: '',
     featured: false
+  });
+
+  // Category Form
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    image: ''
   });
 
   // Carousel Form
@@ -111,6 +119,33 @@ export function AdminDashboard({
     setProductForm({ name: '', description: '', price: 0, image: '', category: '', featured: false });
     setEditingProduct(null);
     setShowProductForm(false);
+  };
+
+  const handleCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingCategory) {
+      // Update existing category
+      const updatedCategories = categories.map(c => 
+        c.id === editingCategory.id 
+          ? { ...editingCategory, ...categoryForm, name: sanitizeHTML(categoryForm.name) }
+          : c
+      );
+      onUpdateCategories(updatedCategories);
+    } else {
+      // Add new category
+      const newCategory: Category = {
+        id: Date.now().toString(),
+        ...categoryForm,
+        name: sanitizeHTML(categoryForm.name),
+        productCount: 0
+      };
+      onUpdateCategories([...categories, newCategory]);
+    }
+
+    setCategoryForm({ name: '', image: '' });
+    setEditingCategory(null);
+    setShowCategoryForm(false);
   };
 
   const handleCarouselSubmit = (e: React.FormEvent) => {
@@ -179,6 +214,10 @@ export function AdminDashboard({
 
   const deleteProduct = (id: string) => {
     onUpdateProducts(products.filter(p => p.id !== id));
+  };
+
+  const deleteCategory = (id: string) => {
+    onUpdateCategories(categories.filter(c => c.id !== id));
   };
 
   const deleteCarouselItem = (id: string) => {
@@ -457,13 +496,92 @@ export function AdminDashboard({
         {/* Categories */}
         {activeTab === 'categories' && (
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Categorias</h1>
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-800">Categorias</h1>
+              <button
+                onClick={() => {
+                  setEditingCategory(null);
+                  setCategoryForm({ name: '', image: '' });
+                  setShowCategoryForm(true);
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Nova Categoria</span>
+              </button>
+            </div>
+
+            {showCategoryForm && (
+              <div className="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-bold mb-4">
+                  {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+                </h2>
+                <form onSubmit={handleCategorySubmit} className="grid md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Nome da categoria"
+                    value={categoryForm.name}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                    className="border rounded-lg px-3 py-2"
+                    required
+                  />
+                  <input
+                    type="url"
+                    placeholder="URL da imagem"
+                    value={categoryForm.image}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
+                    className="border rounded-lg px-3 py-2"
+                    required
+                  />
+                  <div className="md:col-span-2 flex space-x-2">
+                    <button
+                      type="submit"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                    >
+                      {editingCategory ? 'Atualizar' : 'Criar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCategoryForm(false);
+                        setEditingCategory(null);
+                      }}
+                      className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-6">
               {categories.map((category) => (
-                <div key={category.id} className="bg-white rounded-lg shadow p-4">
+                <div key={category.id} className="bg-white rounded-lg shadow p-4 relative">
                   <img src={category.image} alt={category.name} className="w-full h-32 object-cover rounded-lg mb-3" />
                   <h3 className="font-bold text-lg">{category.name}</h3>
                   <p className="text-gray-600">{category.productCount} produtos</p>
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setEditingCategory(category);
+                        setCategoryForm({
+                          name: category.name,
+                          image: category.image,
+                        });
+                        setShowCategoryForm(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 bg-white/70 p-1 rounded-full"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteCategory(category.id)}
+                      className="text-red-600 hover:text-red-800 bg-white/70 p-1 rounded-full"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
