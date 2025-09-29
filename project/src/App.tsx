@@ -110,7 +110,7 @@ function App() {
 
   // Check for admin access
   useEffect(() => {
-    const isAdminPath = window.location.pathname === '/LovelySexDay/admin';
+    const isAdminPath = window.location.pathname === `${import.meta.env.BASE_URL}admin`;
     if (isAdminPath) {
       setCurrentView(adminSession.isAuthenticated ? 'admin-dashboard' : 'admin-login');
     }
