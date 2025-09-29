@@ -213,15 +213,21 @@ export function AdminDashboard({
   };
 
   const deleteProduct = (id: string) => {
-    onUpdateProducts(products.filter(p => p.id !== id));
+    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
+      onUpdateProducts(products.filter(p => p.id !== id));
+    }
   };
 
   const deleteCategory = (id: string) => {
-    onUpdateCategories(categories.filter(c => c.id !== id));
+    if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
+      onUpdateCategories(categories.filter(c => c.id !== id));
+    }
   };
 
   const deleteCarouselItem = (id: string) => {
-    onUpdateCarousel(carouselItems.filter(item => item.id !== id));
+    if (window.confirm('Tem certeza que deseja excluir este item do carrossel?')) {
+      onUpdateCarousel(carouselItems.filter(item => item.id !== id));
+    }
   };
 
   const deleteAdmin = (id: string) => {

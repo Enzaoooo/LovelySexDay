@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Product } from '../../types';
 import { generateSecureId, sanitizeInput } from '../../utils/security';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, Check } from 'lucide-react';
+import { imageManifest } from '../../data/imageManifest';
 
 export function AdminProducts() {
   const { state, dispatch } = useApp();
@@ -25,7 +26,6 @@ export function AdminProducts() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Sanitizar todos os campos de entrada
     const sanitizedData = {
       ...formData,
       name: sanitizeInput(formData.name || ''),
@@ -145,6 +145,51 @@ export function AdminProducts() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Imagens
+            </label>
+            <div className="grid grid-cols-4 gap-4 bg-gray-700 p-4 rounded-lg">
+              {imageManifest.map((imageName) => {
+                const imagePath = `/img/${imageName}`;
+                const isSelected = formData.images?.includes(imagePath);
+                return (
+                  <div
+                    key={imageName}
+                    onClick={() => {
+                      const currentImages = formData.images || [];
+                      if (isSelected) {
+                        setFormData({
+                          ...formData,
+                          images: currentImages.filter((img) => img !== imagePath),
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          images: [...currentImages, imagePath],
+                        });
+                      }
+                    }}
+                    className={`relative rounded-lg overflow-hidden cursor-pointer border-2 ${
+                      isSelected ? 'border-purple-500' : 'border-transparent'
+                    }`}
+                  >
+                    <img
+                      src={imagePath}
+                      alt={imageName}
+                      className="w-full h-full object-cover"
+                    />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Check className="text-white h-8 w-8" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div>

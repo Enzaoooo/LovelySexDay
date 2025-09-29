@@ -14,12 +14,9 @@ export function Header({ cartItemsCount = 0, onCartClick }: HeaderProps) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <Heart className="h-8 w-8 text-rose-200" fill="currentColor" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-rose-100 bg-clip-text text-transparent">
-              LovelySexDay
-            </h1>
-          </div>
+          <a href="/" className="flex items-center space-x-2">
+            <img src="/img/lovely-sex-day.svg" alt="Lovely Sex Day" className="h-12" />
+          </a>
 
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-8">

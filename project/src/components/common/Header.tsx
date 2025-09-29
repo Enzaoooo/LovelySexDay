@@ -24,21 +24,19 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
   };
 
   return (
-    <header className="bg-black text-white shadow-lg">
+    <header className="bg-primary text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text">
-              Lovely Sex Day
-            </h1>
+            <img src="/img/Lovely Sex Day.svg" alt="Lovely Sex Day" className="h-12" />
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <button
               onClick={() => onCategorySelect(null)}
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-200"
+              className="text-gray-300 hover:text-accent transition-colors duration-200"
             >
               Todos os Produtos
             </button>
@@ -46,7 +44,7 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
               <button
                 key={category.id}
                 onClick={() => onCategorySelect(category.id)}
-                className="text-gray-300 hover:text-purple-400 transition-colors duration-200"
+                className="text-gray-300 hover:text-accent transition-colors duration-200"
               >
                 {category.name}
               </button>
@@ -61,18 +59,18 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
                 placeholder="Buscar produtos..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="bg-gray-800 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
+                className="bg-primary-dark text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light transition-all duration-200"
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
             
             <button
               onClick={onCartClick}
-              className="relative p-2 text-gray-300 hover:text-purple-400 transition-colors duration-200"
+              className="relative p-2 text-gray-300 hover:text-accent transition-colors duration-200"
             >
               <ShoppingCart className="h-6 w-6" />
               {cartItemsCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {cartItemsCount}
                 </span>
               )}
@@ -98,7 +96,7 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
                   placeholder="Buscar produtos..."
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  className="w-full bg-gray-800 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-primary-dark text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
@@ -108,7 +106,7 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
                   onCategorySelect(null);
                   setIsMobileMenuOpen(false);
                 }}
-                className="text-left text-gray-300 hover:text-purple-400 py-2"
+                className="text-left text-gray-300 hover:text-accent py-2"
               >
                 Todos os Produtos
               </button>
@@ -120,7 +118,7 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
                     onCategorySelect(category.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left text-gray-300 hover:text-purple-400 py-2"
+                  className="text-left text-gray-300 hover:text-accent py-2"
                 >
                   {category.name}
                 </button>
@@ -131,7 +129,7 @@ export function Header({ onCategorySelect, onSearchChange, onCartClick, categori
                   onCartClick();
                   setIsMobileMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 text-gray-300 hover:text-purple-400 py-2"
+                className="flex items-center space-x-2 text-gray-300 hover:text-accent py-2"
               >
                 <ShoppingCart className="h-5 w-5" />
                 <span>Carrinho ({cartItemsCount})</span>

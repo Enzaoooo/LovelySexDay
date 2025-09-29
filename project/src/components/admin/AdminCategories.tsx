@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Category } from '../../types';
 import { generateSecureId, sanitizeInput } from '../../utils/security';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Check } from 'lucide-react';
+import { imageManifest } from '../../data/imageManifest';
 
 export function AdminCategories() {
   const { state, dispatch } = useApp();
@@ -13,7 +14,6 @@ export function AdminCategories() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Sanitizar dados de entrada
     const sanitizedData = {
       name: sanitizeInput(formData.name),
       slug: sanitizeInput(formData.slug),
@@ -24,7 +24,7 @@ export function AdminCategories() {
       ...sanitizedData,
       id: editingCategory?.id || generateSecureId(),
       slug: sanitizedData.slug || sanitizedData.name.toLowerCase().replace(/\s+/g, '-')
-    };
+    } as Category;
 
     if (editingCategory) {
       dispatch({ type: 'UPDATE_CATEGORY', payload: categoryData });
@@ -97,15 +97,37 @@ export function AdminCategories() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              URL da Imagem (opcional)
+              Imagem da Categoria
             </label>
-            <input
-              type="url"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="https://exemplo.com/imagem.jpg"
-            />
+            <div className="grid grid-cols-4 gap-4 bg-gray-700 p-4 rounded-lg">
+              {imageManifest.map((imageName) => {
+                const imagePath = `/img/${imageName}`;
+                const isSelected = formData.image === imagePath;
+                return (
+                  <div
+                    key={imageName}
+                    onClick={() => {
+                      const newImage = isSelected ? '' : imagePath;
+                      setFormData({ ...formData, image: newImage });
+                    }}
+                    className={`relative rounded-lg overflow-hidden cursor-pointer border-2 ${
+                      isSelected ? 'border-purple-500' : 'border-transparent'
+                    }`}
+                  >
+                    <img
+                      src={imagePath}
+                      alt={imageName}
+                      className="w-full h-full object-cover"
+                    />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Check className="text-white h-8 w-8" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex justify-end space-x-4">
