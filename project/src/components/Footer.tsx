@@ -33,14 +33,7 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
           </div>
 
           {/* Additional Info */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Horário de Atendimento</h4>
-            <div className="space-y-2 text-gray-400">
-              <p>Segunda a Sexta: 9h às 18h</p>
-              <p>Sábado: 9h às 14h</p>
-              <p>Domingo: Fechado</p>
-            </div>
-          </div>
+          
 
           {/* Developer Tools */}
           <div>
