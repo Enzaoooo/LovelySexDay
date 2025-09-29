@@ -4,10 +4,12 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
   const sanitizedWhatsapp = whatsappNumber.replace(/\D/g, '');
   const whatsappLink = `https://wa.me/55${sanitizedWhatsapp}`;
 
+  const adminPath = `${import.meta.env.BASE_URL}admin`;
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
             <h3 className="text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text mb-4">
@@ -37,6 +39,16 @@ export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
               <p>Segunda a Sexta: 9h às 18h</p>
               <p>Sábado: 9h às 14h</p>
               <p>Domingo: Fechado</p>
+            </div>
+          </div>
+
+          {/* Developer Tools */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">Desenvolvedor</h4>
+            <div className="space-y-2 text-gray-400">
+              <a href={adminPath} className="hover:text-white">
+                Painel Administrativo
+              </a>
             </div>
           </div>
         </div>
