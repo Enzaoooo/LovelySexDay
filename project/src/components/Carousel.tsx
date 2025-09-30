@@ -1,70 +1,114 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { CarouselItem } from '../types';
+import { dbFunctions } from '../lib/database';
+import { CarouselImage } from '../types/database';
+import { CAROUSEL_CONFIG } from '../utils/constants';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
-interface CarouselProps {
-  items: CarouselItem[];
-}
-
-export function Carousel({ items }: CarouselProps) {
+export const Carousel: React.FC = () => {
+  const [images, setImages] = useState<CarouselImage[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Auto-advance carousel
   useEffect(() => {
+    loadCarouselImages();
+  }, []);
+
+  const loadCarouselImages = async () => {
+    setLoading(true);
+    try {
+      const carouselImages = await dbFunctions.getCarouselImages();
+      setImages(carouselImages);
+    } catch (error) {
+      console.error('Error loading carousel images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (images.length === 0) return;
+
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % items.length);
-    }, 5000);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, CAROUSEL_CONFIG.AUTO_PLAY_INTERVAL);
+
     return () => clearInterval(interval);
-  }, [items.length]);
+  }, [images.length]);
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % items.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
   };
 
-  if (items.length === 0) return null;
+  if (loading) {
+    return (
+      <div className="relative h-64 md:h-96 bg-gradient-to-r from-red-600 to-purple-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <LoadingSpinner size="lg" className="mx-auto mb-4 border-white" />
+          <p className="text-xl">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (images.length === 0) {
+    return (
+      <div className="relative h-64 md:h-96 bg-gradient-to-r from-red-600 to-purple-700 flex items-center justify-center">
+        <p className="text-white text-xl">Nenhuma imagem disponível</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative h-96 md:h-[500px] overflow-hidden rounded-xl shadow-2xl">
-      {/* Carousel Items */}
-      <div className="flex h-full transition-transform duration-500 ease-in-out"
-           style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
-        {items.map((item) => (
-          <div key={item.id} className="w-full h-full flex-shrink-0 relative">
+    <div className="relative h-64 md:h-96 overflow-hidden rounded-lg shadow-2xl">
+      {/* Images */}
+      <div
+        className="flex transition-transform ease-in-out h-full"
+        style={{ 
+          transform: `translateX(-${currentIndex * 100}%)`,
+          transitionDuration: `${CAROUSEL_CONFIG.TRANSITION_DURATION}ms`
+        }}
+      >
+        {images.map((image) => (
+          <div key={image.id} className="min-w-full h-full relative">
             <img
-              src={item.image}
-              alt={item.title}
+              src={image.image_url}
+              alt={image.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-            <div className="absolute bottom-8 left-8 right-8 text-white">
-              <h3 className="text-3xl md:text-4xl font-bold mb-2">{item.title}</h3>
-              <p className="text-lg md:text-xl text-gray-200">{item.description}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent">
+              <div className="absolute bottom-6 left-6">
+                <h3 className="text-white text-xl md:text-2xl font-bold">
+                  {image.title}
+                </h3>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Navigation Buttons */}
       <button
         onClick={goToPrevious}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 text-white transition-colors"
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft size={24} />
       </button>
+      
       <button
         onClick={goToNext}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-2 text-white transition-colors"
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight size={24} />
       </button>
 
       {/* Indicators */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-        {items.map((_, index) => (
+        {images.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
@@ -76,4 +120,4 @@ export function Carousel({ items }: CarouselProps) {
       </div>
     </div>
   );
-}
+};

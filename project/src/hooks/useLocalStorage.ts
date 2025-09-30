@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// Hook para gerenciar localStorage
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {

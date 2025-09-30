@@ -9,6 +9,15 @@ interface HeaderProps {
 export function Header({ cartItemsCount = 0, onCartClick }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const scrollToSection = (id: string | null) => {
+    if (!id) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const element = document.getElementById(id);
+    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <header className="bg-gradient-to-r from-rose-600 via-rose-500 to-orange-500 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -21,46 +30,25 @@ export function Header({ cartItemsCount = 0, onCartClick }: HeaderProps) {
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
             <button 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => scrollToSection(null)}
               className="hover:text-rose-200 transition-colors font-medium"
             >
               Início
             </button>
             <button 
-              onClick={() => {
-                const element = document.getElementById('categorias');
-                if (element) {
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - 80;
-                  window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                }
-              }}
+              onClick={() => scrollToSection('categorias')}
               className="hover:text-rose-200 transition-colors font-medium"
             >
               Categorias
             </button>
             <button 
-              onClick={() => {
-                const element = document.getElementById('produtos');
-                if (element) {
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - 80;
-                  window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                }
-              }}
+              onClick={() => scrollToSection('produtos')}
               className="hover:text-rose-200 transition-colors font-medium"
             >
               Produtos
             </button>
             <button 
-              onClick={() => {
-                const element = document.getElementById('contato');
-                if (element) {
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - 80;
-                  window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                }
-              }}
+              onClick={() => scrollToSection('contato')}
               className="hover:text-rose-200 transition-colors font-medium"
             >
               Contato
@@ -96,52 +84,25 @@ export function Header({ cartItemsCount = 0, onCartClick }: HeaderProps) {
           <nav className="md:hidden pb-4 border-t border-white/20 mt-2 pt-4">
             <div className="flex flex-col space-y-3">
               <button 
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                  setIsMenuOpen(false);
-                }}
+                onClick={() => { scrollToSection(null); setIsMenuOpen(false); }}
                 className="hover:text-rose-200 transition-colors font-medium text-left"
               >
                 Início
               </button>
               <button 
-                onClick={() => {
-                  const element = document.getElementById('categorias');
-                  if (element) {
-                    const elementPosition = element.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - 80;
-                    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                  }
-                  setIsMenuOpen(false);
-                }}
+                onClick={() => { scrollToSection('categorias'); setIsMenuOpen(false); }}
                 className="hover:text-rose-200 transition-colors font-medium text-left"
               >
                 Categorias
               </button>
               <button 
-                onClick={() => {
-                  const element = document.getElementById('produtos');
-                  if (element) {
-                    const elementPosition = element.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - 80;
-                    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                  }
-                  setIsMenuOpen(false);
-                }}
+                onClick={() => { scrollToSection('produtos'); setIsMenuOpen(false); }}
                 className="hover:text-rose-200 transition-colors font-medium text-left"
               >
                 Produtos
               </button>
               <button 
-                onClick={() => {
-                  const element = document.getElementById('contato');
-                  if (element) {
-                    const elementPosition = element.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - 80;
-                    window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-                  }
-                  setIsMenuOpen(false);
-                }}
+                onClick={() => { scrollToSection('contato'); setIsMenuOpen(false); }}
                 className="hover:text-rose-200 transition-colors font-medium text-left"
               >
                 Contato

@@ -1,55 +1,60 @@
 import React from 'react';
+import { Phone, MessageCircle } from 'lucide-react';
+import { dbFunctions } from '../lib/database';
+import { formatPhoneNumber } from '../utils/formatters';
 
-export function Footer({ whatsappNumber }: { whatsappNumber: string }) {
-  const sanitizedWhatsapp = whatsappNumber.replace(/\D/g, '');
-  const whatsappLink = `https://wa.me/55${sanitizedWhatsapp}`;
+export const Footer: React.FC = () => {
+  const [whatsappNumber, setWhatsappNumber] = React.useState('5511999999999');
 
-  const adminPath = `${import.meta.env.BASE_URL}admin`;
+  React.useEffect(() => {
+    loadSiteSettings();
+  }, []);
+
+  const loadSiteSettings = async () => {
+    const settings = await dbFunctions.getSiteSettings();
+    setWhatsappNumber(settings.whatsapp_number);
+  };
+
+  const handleWhatsAppClick = () => {
+    window.open(`https://wa.me/${whatsappNumber}?text=Olá! Gostaria de mais informações.`, '_blank');
+  };
 
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div>
-            <h3 className="text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text mb-4">
-              Lovely Sex Day
-            </h3>
-            <p className="text-gray-400 mb-4">
-              Sua loja de produtos íntimos com qualidade, discrição e entrega segura.
+    <footer className="bg-gradient-to-r from-red-600 via-purple-700 to-red-600 text-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          {/* Logo */}
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 font-serif tracking-wide">
+            Lovely Sex Day
+          </h2>
+
+          {/* Contact Info */}
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 mb-8">
+            <div className="flex items-center space-x-2">
+              <Phone size={20} />
+              <span className="font-semibold">{formatPhoneNumber(whatsappNumber).replace(/^\+55 /, '')}</span>
+            </div>
+            
+            <button
+              onClick={handleWhatsAppClick}
+              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-full transition-colors"
+            >
+              <MessageCircle size={20} />
+              <span className="font-semibold">WhatsApp</span>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/20 pt-8">
+            <p className="text-white/80">
+              © 2024 Lovely Sex Day. Todos os direitos reservados.
+            </p>
+            <p className="text-white/60 text-sm mt-2">
+              Site destinado exclusivamente para maiores de 18 anos.
             </p>
           </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Contato</h4>
-            <div className="space-y-2 text-gray-400">
-              <div className="flex items-center space-x-2">
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                  WhatsApp: {whatsappNumber}
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Info */}
-          
-
-          {/* Developer Tools */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Desenvolvedor</h4>
-            <div className="space-y-2 text-gray-400">
-              <a href={adminPath} className="hover:text-white">
-                Painel Administrativo
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Lovely Sex Day. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>
   );
-}
+};
