@@ -136,10 +136,10 @@ function App() {
     }
   };
 
-  // Função para acessar admin via URL
+  // Função para acessar admin via URL (HashRouter)
   React.useEffect(() => {
-    const path = window.location.pathname;
-    if (path.includes('/admin')) {
+    const hash = window.location.hash;
+    if (hash.includes('/admin')) {
       setCurrentPage('admin-login');
     }
   }, []);
