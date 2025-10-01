@@ -24,7 +24,7 @@ export function Header({ cartItemsCount = 0, onCartClick }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="/" className="flex items-center space-x-2">
-            <img src="/img/lovely-sex-day.svg" alt="Lovely Sex Day" className="h-12" />
+            <img src="../../Lovely Sex Day.png" alt="Lovely Sex Day" className="h-12" />
           </a>
 
           {/* Navigation - Desktop */}
