@@ -1,36 +1,40 @@
 import React, { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
 
 interface AdminLoginProps {
-  onLogin: (username: string, password: string) => void;
+  onLogin: () => void;
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError('Por favor, preencha todos os campos');
+      setLoading(false);
       return;
     }
 
     try {
-      const admin = await dbFunctions.authenticateAdmin(username, password);
-      if (admin) {
-        onLogin(username, password);
-      } else {
-        setError('Credenciais inválidas');
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        throw error;
       }
-    } catch (error) {
+      onLogin();
+    } catch (error: any) {
       console.error('Erro na autenticação:', error);
-      setError('Erro ao fazer login. Verifique se o banco de dados está configurado corretamente.');
+      setError(error.message || 'Credenciais inválidas');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,22 +67,22 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
             )}
 
             <div>
-              <label htmlFor="username" className="sr-only">
-                Usuário
+              <label htmlFor="email" className="sr-only">
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
                   required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none rounded-lg relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="Nome de usuário"
+                  placeholder="Email"
                 />
               </div>
             </div>
@@ -118,18 +122,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
             <div>
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:bg-red-400"
               >
-                Entrar no Painel
+                {loading ? 'Entrando...' : 'Entrar no Painel'}
               </button>
             </div>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Credenciais padrão:</p>
-            <p><strong>Usuário:</strong> admin</p>
-            <p><strong>Senha:</strong> admin123</p>
-          </div>
         </div>
       </div>
     </div>

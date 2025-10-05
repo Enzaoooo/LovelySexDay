@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Tag, Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { Category } from '../../types/database';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { getCategories, createCategory, updateCategory, deleteCategory } from '../../lib/database';
+import { uploadImage, deleteImage } from '../../lib/supabase';
+import { Category } from '../../lib/types';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -11,6 +12,7 @@ export const CategoryManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,7 +27,7 @@ export const CategoryManager: React.FC = () => {
   const loadCategories = async () => {
     setLoading(true);
     try {
-      const categoriesData = await dbFunctions.getCategories();
+      const categoriesData = await getCategories();
       setCategories(categoriesData);
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
@@ -42,6 +44,7 @@ export const CategoryManager: React.FC = () => {
       image_url: ''
     });
     setEditingCategory(null);
+    setImageFile(null);
   };
 
   const openModal = (category?: Category) => {
@@ -49,8 +52,8 @@ export const CategoryManager: React.FC = () => {
       setEditingCategory(category);
       setFormData({
         name: category.name,
-        description: category.description,
-        image_url: category.image_url
+        description: category.description || '',
+        image_url: category.image_url || ''
       });
     } else {
       resetForm();
@@ -67,6 +70,7 @@ export const CategoryManager: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
@@ -82,15 +86,25 @@ export const CategoryManager: React.FC = () => {
     setMessage('');
 
     try {
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile, 'categories');
+      }
+
+      const categoryData = {
+        ...formData,
+        image_url: imageUrl,
+      };
+
       if (editingCategory) {
-        await dbFunctions.updateCategory(editingCategory.id, formData);
+        await updateCategory(editingCategory.id, categoryData);
         setMessage('Categoria atualizada com sucesso!');
       } else {
-        await dbFunctions.createCategory(formData);
+        await createCategory(categoryData);
         setMessage('Categoria criada com sucesso!');
       }
 
-      await loadCategories(); // Reload data
+      await loadCategories();
       closeModal();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -101,11 +115,14 @@ export const CategoryManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (categoryId: number) => {
+  const handleDelete = async (category: Category) => {
     if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
       try {
-        await dbFunctions.deleteCategory(categoryId);
-        await loadCategories(); // Reload data
+        if (category.image_url) {
+          await deleteImage(category.image_url);
+        }
+        await deleteCategory(category.id);
+        await loadCategories();
         setMessage('Categoria excluída com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
@@ -154,7 +171,7 @@ export const CategoryManager: React.FC = () => {
           {categories.map((category) => (
             <div key={category.id} className="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow">
               <img
-                src={category.image_url}
+                src={category.image_url || ''}
                 alt={category.name}
                 className="w-full h-32 object-cover rounded-lg mb-4"
               />
@@ -169,7 +186,7 @@ export const CategoryManager: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleDelete(category.id)}
+                  onClick={() => handleDelete(category)}
                   className="text-red-600 hover:text-red-900 p-2"
                 >
                   <Trash2 size={16} />
@@ -206,7 +223,7 @@ export const CategoryManager: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="Ex: Lingeries, Perfumes, etc."
                 />
               </div>
@@ -218,9 +235,9 @@ export const CategoryManager: React.FC = () => {
                 <textarea
                   required
                   rows={3}
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="Descreva a categoria..."
                 />
               </div>

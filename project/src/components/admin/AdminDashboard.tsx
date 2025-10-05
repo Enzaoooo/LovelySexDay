@@ -10,15 +10,14 @@ import {
   Settings,
   Phone
 } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { Product } from '../../types/database';
+import { getProducts, getCategories, getCarouselImages, getMostAccessedProducts } from '../../lib/database';
+import { Product } from '../../lib/types';
 import { SiteSettingsManager } from './SiteSettingsManager';
 import { ProductManager } from './ProductManager';
 import { CategoryManager } from './CategoryManager';
 import { CarouselManager } from './CarouselManager';
 import { PromotionManager } from './PromotionManager';
 import { AdminManager } from './AdminManager';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -42,10 +41,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
   const loadDashboardData = async () => {
     try {
       const [products, categories, carouselImages, mostAccessed] = await Promise.all([
-        dbFunctions.getProducts(),
-        dbFunctions.getCategories(),
-        dbFunctions.getCarouselImages(),
-        dbFunctions.getMostAccessedProducts()
+        getProducts(),
+        getCategories(),
+        getCarouselImages(),
+        getMostAccessedProducts()
       ]);
 
       setStats({
@@ -73,8 +72,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
           <Icon className="text-white" size={24} />
         </div>
         <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-800">{value}</p>
+          <p className="text-sm font-medium text-black">{title}</p>
+          <p className="text-2xl font-bold text-black">{value}</p>
         </div>
       </div>
     </div>
@@ -143,8 +142,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <BarChart3 className="mr-2" size={20} />
+              <h3 className="text-lg font-bold text-black mb-4 flex items-center">
+                <BarChart3 className="mr-2 text-black" size={20} />
                 Ações Rápidas
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -163,8 +162,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
 
             {/* Most Accessed Products */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <TrendingUp className="mr-2" size={20} />
+              <h3 className="text-lg font-bold text-black mb-4 flex items-center">
+                <TrendingUp className="mr-2 text-black" size={20} />
                 Produtos Mais Acessados
               </h3>
               <div className="space-y-3">
@@ -179,10 +178,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
                       className="w-12 h-12 object-cover rounded-lg"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">
+                      <p className="text-sm font-medium text-black truncate">
                         {product.name}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-black">
                         {product.access_count} acessos
                       </p>
                     </div>
@@ -204,7 +203,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
             <div className="flex items-center">
               <Settings className="text-red-600 mr-3" size={24} />
               <div>
-                <h1 className="text-xl font-bold text-gray-800">
+                <h1 className="text-xl font-bold text-black">
                   Painel Administrativo - Lovely Sex Day
                 </h1>
                 {currentSection !== 'dashboard' && (
@@ -233,10 +232,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
           <>
             {/* Welcome Message */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <h2 className="text-2xl font-bold text-black mb-2">
                 Bem-vindo ao Painel Administrativo
               </h2>
-              <p className="text-gray-600">
+              <p className="text-black">
                 Gerencie produtos, categorias, promoções e mais através desta interface.
               </p>
             </div>

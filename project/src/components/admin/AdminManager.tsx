@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Save, X, Eye, EyeOff } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { Administrator } from '../../types/database';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { getAdministrators, createAdministrator, updateAdministrator, deleteAdministrator } from '../../lib/database';
+import { Administrator } from '../../lib/types';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export const AdminManager: React.FC = () => {
   const [administrators, setAdministrators] = useState<Administrator[]>([]);
@@ -27,11 +27,11 @@ export const AdminManager: React.FC = () => {
   const loadAdministrators = async () => {
     setLoading(true);
     try {
-      const adminsData = await dbFunctions.getAdministrators();
+      const adminsData = await getAdministrators();
       setAdministrators(adminsData);
     } catch (error) {
       console.error('Erro ao carregar administradores:', error);
-      setMessage('Erro ao carregar administradores');
+      setMessage('Erro ao carregar administradores. Verifique se o client supabase tem a service_role_key.');
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,6 @@ export const AdminManager: React.FC = () => {
     setSaving(true);
     setMessage('');
 
-    // Validações
     if (formData.password !== formData.confirmPassword) {
       setMessage('As senhas não coincidem');
       setSaving(false);
@@ -95,14 +94,14 @@ export const AdminManager: React.FC = () => {
       };
 
       if (editingAdmin) {
-        await dbFunctions.updateAdministrator(editingAdmin.id, adminData);
+        await updateAdministrator(editingAdmin.id, adminData);
         setMessage('Administrador atualizado com sucesso!');
       } else {
-        await dbFunctions.createAdministrator(adminData);
+        await createAdministrator(adminData);
         setMessage('Administrador criado com sucesso!');
       }
 
-      await loadAdministrators(); // Reload data
+      await loadAdministrators();
       closeModal();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -113,7 +112,7 @@ export const AdminManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (adminId: number) => {
+  const handleDelete = async (adminId: string) => {
     if (administrators.length <= 1) {
       setMessage('Não é possível excluir o último administrador');
       setTimeout(() => setMessage(''), 3000);
@@ -122,8 +121,8 @@ export const AdminManager: React.FC = () => {
 
     if (window.confirm('Tem certeza que deseja excluir este administrador?')) {
       try {
-        await dbFunctions.deleteAdministrator(adminId);
-        await loadAdministrators(); // Reload data
+        await deleteAdministrator(adminId);
+        await loadAdministrators();
         setMessage('Administrador excluído com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
@@ -252,7 +251,7 @@ export const AdminManager: React.FC = () => {
                   required
                   value={formData.username}
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="admin"
                 />
               </div>
@@ -266,7 +265,7 @@ export const AdminManager: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="admin@lovelysexday.com"
                 />
               </div>
@@ -307,7 +306,7 @@ export const AdminManager: React.FC = () => {
                   required={!editingAdmin || formData.password !== ''}
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="Confirme a senha"
                 />
               </div>

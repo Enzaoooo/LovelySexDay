@@ -1,35 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Images, Plus, Edit, Trash2, Save, X, Upload, ArrowUp, ArrowDown } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { CarouselImage } from '../../types/database';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { getAllCarouselImages, createCarouselImage, updateCarouselImage, deleteCarouselImage, updateCarouselOrder, getCategories, getPromotions } from '../../lib/database';
+import { uploadImage, deleteImage } from '../../lib/supabase';
+import { CarouselImage, Category, Promotion } from '../../lib/types';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export const CarouselManager: React.FC = () => {
   const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<CarouselImage | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
     image_url: '',
+    button_link: '',
     is_active: true
   });
 
   useEffect(() => {
-    loadCarouselImages();
+    loadInitialData();
   }, []);
 
-  const loadCarouselImages = async () => {
+  const loadInitialData = async () => {
     setLoading(true);
     try {
-      const imagesData = await dbFunctions.getAllCarouselImages();
+      const [imagesData, categoriesData, promotionsData] = await Promise.all([
+        getAllCarouselImages(),
+        getCategories(),
+        getPromotions()
+      ]);
       setCarouselImages(imagesData);
+      setCategories(categoriesData);
+      setPromotions(promotionsData);
     } catch (error) {
-      console.error('Erro ao carregar imagens do carrossel:', error);
-      setMessage('Erro ao carregar imagens do carrossel');
+      console.error('Erro ao carregar dados iniciais:', error);
+      setMessage('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -39,17 +50,20 @@ export const CarouselManager: React.FC = () => {
     setFormData({
       title: '',
       image_url: '',
+      button_link: '',
       is_active: true
     });
     setEditingImage(null);
+    setImageFile(null);
   };
 
   const openModal = (image?: CarouselImage) => {
     if (image) {
       setEditingImage(image);
       setFormData({
-        title: image.title,
+        title: image.title || '',
         image_url: image.image_url,
+        button_link: image.button_link || '',
         is_active: image.is_active
       });
     } else {
@@ -67,6 +81,7 @@ export const CarouselManager: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
@@ -82,19 +97,29 @@ export const CarouselManager: React.FC = () => {
     setMessage('');
 
     try {
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile, 'carousel');
+      }
+
+      const imageData = {
+        ...formData,
+        image_url: imageUrl,
+      };
+
       if (editingImage) {
-        await dbFunctions.updateCarouselImage(editingImage.id, formData);
+        await updateCarouselImage(editingImage.id, imageData);
         setMessage('Imagem atualizada com sucesso!');
       } else {
-        const imageData = {
-          ...formData,
+        const newImageData = {
+          ...imageData,
           order_index: carouselImages.length + 1
         };
-        await dbFunctions.createCarouselImage(imageData);
+        await createCarouselImage(newImageData);
         setMessage('Imagem adicionada com sucesso!');
       }
 
-      await loadCarouselImages(); // Reload data
+      await loadInitialData();
       closeModal();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -105,11 +130,12 @@ export const CarouselManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (imageId: number) => {
+  const handleDelete = async (image: CarouselImage) => {
     if (window.confirm('Tem certeza que deseja excluir esta imagem?')) {
       try {
-        await dbFunctions.deleteCarouselImage(imageId);
-        await loadCarouselImages(); // Reload data
+        await deleteImage(image.image_url);
+        await deleteCarouselImage(image.id);
+        await loadInitialData();
         setMessage('Imagem excluída com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
@@ -119,7 +145,7 @@ export const CarouselManager: React.FC = () => {
     }
   };
 
-  const moveImage = (imageId: number, direction: 'up' | 'down') => {
+  const moveImage = async (imageId: number, direction: 'up' | 'down') => {
     const currentIndex = carouselImages.findIndex(img => img.id === imageId);
     if (currentIndex === -1) return;
 
@@ -129,31 +155,30 @@ export const CarouselManager: React.FC = () => {
     if (targetIndex >= 0 && targetIndex < newImages.length) {
       [newImages[currentIndex], newImages[targetIndex]] = [newImages[targetIndex], newImages[currentIndex]];
       
-      // Atualizar order_index
-      newImages.forEach((img, index) => {
-        img.order_index = index + 1;
-      });
+      const updatedImages = newImages.map((img, index) => ({
+        ...img,
+        order_index: index + 1,
+      }));
       
-      // Update in database
-      dbFunctions.updateCarouselOrder(newImages).then(() => {
-        setCarouselImages(newImages);
-      });
-      
-      setMessage('Ordem das imagens atualizada!');
-      setTimeout(() => setMessage(''), 3000);
+      try {
+        await updateCarouselOrder(updatedImages);
+        setCarouselImages(updatedImages);
+        setMessage('Ordem das imagens atualizada!');
+        setTimeout(() => setMessage(''), 3000);
+      } catch (error) {
+        console.error('Erro ao atualizar ordem:', error);
+        setMessage('Erro ao atualizar ordem das imagens');
+      }
     }
   };
 
-  const toggleActive = async (imageId: number) => {
+  const toggleActive = async (image: CarouselImage) => {
     try {
-      const image = carouselImages.find(img => img.id === imageId);
-      if (image) {
-        const updatedData = { ...image, is_active: !image.is_active };
-        await dbFunctions.updateCarouselImage(imageId, updatedData);
-        await loadCarouselImages(); // Reload data
-        setMessage('Status da imagem atualizado!');
-        setTimeout(() => setMessage(''), 3000);
-      }
+      const updatedData = { ...image, is_active: !image.is_active };
+      await updateCarouselImage(image.id, updatedData);
+      await loadInitialData();
+      setMessage('Status da imagem atualizado!');
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       setMessage('Erro ao atualizar status da imagem');
@@ -197,18 +222,18 @@ export const CarouselManager: React.FC = () => {
 
         <div className="space-y-4">
           {carouselImages
-            .sort((a, b) => a.order_index - b.order_index)
             .map((image, index) => (
             <div key={image.id} className="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
               <img
                 src={image.image_url}
-                alt={image.title}
+                alt={image.title || ''}
                 className="w-24 h-16 object-cover rounded-lg"
               />
               
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-800">{image.title}</h3>
                 <p className="text-sm text-gray-600">Posição: {image.order_index}</p>
+                <p className="text-sm text-gray-600 truncate">Link: {image.button_link || 'N/A'}</p>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   image.is_active 
                     ? 'bg-green-100 text-green-800' 
@@ -234,7 +259,7 @@ export const CarouselManager: React.FC = () => {
                   <ArrowDown size={16} />
                 </button>
                 <button
-                  onClick={() => toggleActive(image.id)}
+                  onClick={() => toggleActive(image)}
                   className={`px-3 py-1 rounded text-xs font-medium ${
                     image.is_active
                       ? 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -250,7 +275,7 @@ export const CarouselManager: React.FC = () => {
                   <Edit size={16} />
                 </button>
                 <button
-                  onClick={() => handleDelete(image.id)}
+                  onClick={() => handleDelete(image)}
                   className="text-red-600 hover:text-red-900 p-1"
                 >
                   <Trash2 size={16} />
@@ -285,11 +310,42 @@ export const CarouselManager: React.FC = () => {
                 <input
                   type="text"
                   required
-                  value={formData.title}
+                  value={formData.title || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   placeholder="Ex: Coleção Verão 2024"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Link do Botão (Opcional)
+                </label>
+                <select
+                  value={formData.button_link || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, button_link: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
+                >
+                  <option value="">Nenhum</option>
+                  <optgroup label="Páginas">
+                    <option value="#/products">Todos os Produtos</option>
+                    <option value="#/promotions">Página de Promoções</option>
+                  </optgroup>
+                  <optgroup label="Categorias">
+                    {categories.map(category => (
+                      <option key={category.id} value={`#/products?category=${category.slug}`}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Promoções">
+                    {promotions.map(promo => (
+                      <option key={promo.id} value={`#/promotions`}>
+                        {promo.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
               </div>
 
               <div>

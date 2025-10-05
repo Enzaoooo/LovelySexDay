@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { Product, Category } from '../../types/database';
-import { formatPrice } from '../../utils/formatters';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { getProducts, getCategories, createProduct, updateProduct, deleteProduct } from '../../lib/database';
+import { uploadImage, deleteImage } from '../../lib/supabase';
+import { Product, Category } from '../../lib/types';
+import { formatPrice } from './utils/formatters';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export const ProductManager: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +14,8 @@ export const ProductManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -20,7 +23,6 @@ export const ProductManager: React.FC = () => {
     description: '',
     detailed_description: '',
     technical_specs: '',
-    image_url: '',
     category_id: '',
     stock_quantity: '',
     is_featured: false,
@@ -36,8 +38,8 @@ export const ProductManager: React.FC = () => {
     setLoading(true);
     try {
       const [productsData, categoriesData] = await Promise.all([
-        dbFunctions.getProducts(),
-        dbFunctions.getCategories()
+        getProducts(),
+        getCategories()
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
@@ -56,7 +58,6 @@ export const ProductManager: React.FC = () => {
       description: '',
       detailed_description: '',
       technical_specs: '',
-      image_url: '',
       category_id: '',
       stock_quantity: '',
       is_featured: false,
@@ -64,6 +65,8 @@ export const ProductManager: React.FC = () => {
       promotion_discount: ''
     });
     setEditingProduct(null);
+    setImageFiles([]);
+    setImageUrls([]);
   };
 
   const openModal = (product?: Product) => {
@@ -72,16 +75,16 @@ export const ProductManager: React.FC = () => {
       setFormData({
         name: product.name,
         price: product.price.toString(),
-        description: product.description,
-        detailed_description: product.detailed_description,
-        technical_specs: product.technical_specs,
-        image_url: product.image_url,
-        category_id: product.category_id.toString(),
+        description: product.description || '',
+        detailed_description: product.detailed_description || '',
+        technical_specs: product.technical_specs || '',
+        category_id: product.category_id?.toString() || '',
         stock_quantity: product.stock_quantity.toString(),
         is_featured: product.is_featured,
         is_on_promotion: product.is_on_promotion,
-        promotion_discount: product.promotion_discount.toString()
+        promotion_discount: product.promotion_discount?.toString() || ''
       });
+      setImageUrls(product.images && product.images.length > 0 ? product.images : (product.image_url ? [product.image_url] : []));
     } else {
       resetForm();
     }
@@ -95,15 +98,24 @@ export const ProductManager: React.FC = () => {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setFormData(prev => ({ ...prev, image_url: result }));
-      };
-      reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setImageFiles(prev => [...prev, ...files]);
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          setImageUrls(prev => [...prev, result]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,8 +124,23 @@ export const ProductManager: React.FC = () => {
     setMessage('');
 
     try {
+      const uploadedUrls = [...imageUrls];
+
+      for (const file of imageFiles) {
+        if (file instanceof File) {
+          const url = await uploadImage(file, 'products');
+          const fileIndex = imageFiles.indexOf(file);
+          if (fileIndex !== -1) {
+            uploadedUrls[uploadedUrls.findIndex(u => u.startsWith('data:'))] = url;
+          }
+        }
+      }
+
+      const finalUrls = uploadedUrls.filter(url => !url.startsWith('data:'));
+
       const productData = {
         ...formData,
+        images: finalUrls,
         price: parseFloat(formData.price),
         category_id: parseInt(formData.category_id),
         stock_quantity: parseInt(formData.stock_quantity),
@@ -121,14 +148,14 @@ export const ProductManager: React.FC = () => {
       };
 
       if (editingProduct) {
-        await dbFunctions.updateProduct(editingProduct.id, productData);
+        await updateProduct(editingProduct.id, productData);
         setMessage('Produto atualizado com sucesso!');
       } else {
-        await dbFunctions.createProduct(productData);
+        await createProduct(productData);
         setMessage('Produto criado com sucesso!');
       }
 
-      await loadData(); // Reload data
+      await loadData();
       closeModal();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -139,11 +166,18 @@ export const ProductManager: React.FC = () => {
     }
   };
 
-  const handleDelete = async (productId: number) => {
+  const handleDelete = async (product: Product) => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
       try {
-        await dbFunctions.deleteProduct(productId);
-        await loadData(); // Reload data
+        if (product.images && product.images.length > 0) {
+          for (const imageUrl of product.images) {
+            await deleteImage(imageUrl);
+          }
+        } else if (product.image_url) {
+          await deleteImage(product.image_url);
+        }
+        await deleteProduct(product.id);
+        await loadData();
         setMessage('Produto excluído com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
@@ -220,7 +254,7 @@ export const ProductManager: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <img
-                          src={product.image_url}
+                          src={product.image_url || ''}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded-lg mr-4"
                         />
@@ -229,7 +263,7 @@ export const ProductManager: React.FC = () => {
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {product.description.substring(0, 50)}...
+                            {product.description?.substring(0, 50)}...
                           </div>
                         </div>
                       </div>
@@ -266,7 +300,7 @@ export const ProductManager: React.FC = () => {
                           <Edit size={16} />
                         </button>
                         <button
-                          onClick={() => handleDelete(product.id)}
+                          onClick={() => handleDelete(product)}
                           className="text-red-600 hover:text-red-900"
                         >
                           <Trash2 size={16} />
@@ -308,7 +342,7 @@ export const ProductManager: React.FC = () => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   />
                 </div>
 
@@ -322,7 +356,7 @@ export const ProductManager: React.FC = () => {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   />
                 </div>
 
@@ -334,7 +368,7 @@ export const ProductManager: React.FC = () => {
                     required
                     value={formData.category_id}
                     onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   >
                     <option value="">Selecione uma categoria</option>
                     {categories.map(category => (
@@ -354,7 +388,7 @@ export const ProductManager: React.FC = () => {
                     required
                     value={formData.stock_quantity}
                     onChange={(e) => setFormData(prev => ({ ...prev, stock_quantity: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   />
                 </div>
               </div>
@@ -366,9 +400,9 @@ export const ProductManager: React.FC = () => {
                 <textarea
                   required
                   rows={3}
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                 />
               </div>
 
@@ -378,9 +412,9 @@ export const ProductManager: React.FC = () => {
                 </label>
                 <textarea
                   rows={4}
-                  value={formData.detailed_description}
+                  value={formData.detailed_description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, detailed_description: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                 />
               </div>
 
@@ -390,37 +424,62 @@ export const ProductManager: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  value={formData.technical_specs}
+                  value={formData.technical_specs || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, technical_specs: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Imagem do Produto
+                  Imagens do Produto (Múltiplas)
                 </label>
-                <div className="flex items-center space-x-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center cursor-pointer"
-                  >
-                    <Upload className="mr-2" size={16} />
-                    Escolher Imagem
-                  </label>
-                  {formData.image_url && (
-                    <img
-                      src={formData.image_url}
-                      alt="Preview"
-                      className="w-16 h-16 object-cover rounded-lg"
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
                     />
+                    <label
+                      htmlFor="image-upload"
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors flex items-center cursor-pointer"
+                    >
+                      <Upload className="mr-2" size={16} />
+                      Adicionar Imagens
+                    </label>
+                    <span className="text-sm text-gray-500">
+                      {imageUrls.length} imagem(ns) selecionada(s)
+                    </span>
+                  </div>
+
+                  {imageUrls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-4">
+                      {imageUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={16} />
+                          </button>
+                          {index === 0 && (
+                            <span className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -462,9 +521,9 @@ export const ProductManager: React.FC = () => {
                     type="number"
                     min="0"
                     max="100"
-                    value={formData.promotion_discount}
+                    value={formData.promotion_discount || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, promotion_discount: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                   />
                 </div>
               )}

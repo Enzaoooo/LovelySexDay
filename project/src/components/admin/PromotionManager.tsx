@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Plus, Edit, Trash2, Save, X } from 'lucide-react';
-import { dbFunctions } from '../../lib/database';
-import { Product, Promotion } from '../../types/database';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { getProducts, getPromotions, createPromotion, updatePromotion, deletePromotion, togglePromotionStatus } from '../../lib/database';
+import { Product, Promotion } from '../../lib/types';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export const PromotionManager: React.FC = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -27,8 +27,10 @@ export const PromotionManager: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const productsData = await dbFunctions.getProducts();
-      const promotionsData = await dbFunctions.getPromotions();
+      const [productsData, promotionsData] = await Promise.all([
+        getProducts(),
+        getPromotions()
+      ]);
       setProducts(productsData);
       setPromotions(promotionsData);
     } catch (error) {
@@ -91,14 +93,14 @@ export const PromotionManager: React.FC = () => {
       };
 
       if (editingPromotion) {
-        await dbFunctions.updatePromotion(editingPromotion.id, promotionData);
+        await updatePromotion(editingPromotion.id, promotionData);
         setMessage('Promoção atualizada com sucesso!');
       } else {
-        await dbFunctions.createPromotion(promotionData);
+        await createPromotion(promotionData);
         setMessage('Promoção criada com sucesso!');
       }
 
-      await loadData(); // Reload data
+      await loadData();
       closeModal();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -109,25 +111,11 @@ export const PromotionManager: React.FC = () => {
     }
   };
 
-  const applyPromotionToProducts = (productIds: number[], discount: number, isActive: boolean) => {
-    const updatedProducts = products.map(product => {
-      if (productIds.includes(product.id)) {
-        return {
-          ...product,
-          is_on_promotion: isActive,
-          promotion_discount: isActive ? discount : 0
-        };
-      }
-      return product;
-    });
-    setProducts(updatedProducts);
-  };
-
   const handleDelete = async (promotionId: number) => {
     if (window.confirm('Tem certeza que deseja excluir esta promoção?')) {
       try {
-        await dbFunctions.deletePromotion(promotionId);
-        await loadData(); // Reload data
+        await deletePromotion(promotionId);
+        await loadData();
         setMessage('Promoção excluída com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } catch (error) {
@@ -137,10 +125,10 @@ export const PromotionManager: React.FC = () => {
     }
   };
 
-  const togglePromotionStatus = async (promotionId: number) => {
+  const handleToggleStatus = async (promotionId: number) => {
     try {
-      await dbFunctions.togglePromotionStatus(promotionId);
-      await loadData(); // Reload data
+      await togglePromotionStatus(promotionId);
+      await loadData();
       setMessage('Status da promoção atualizado!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -202,7 +190,7 @@ export const PromotionManager: React.FC = () => {
                     {promotion.is_active ? 'Ativa' : 'Inativa'}
                   </span>
                   <button
-                    onClick={() => togglePromotionStatus(promotion.id)}
+                    onClick={() => handleToggleStatus(promotion.id)}
                     className={`px-3 py-1 rounded text-sm font-medium ${
                       promotion.is_active
                         ? 'bg-red-100 text-red-800 hover:bg-red-200'
@@ -234,7 +222,7 @@ export const PromotionManager: React.FC = () => {
                   return (
                     <div key={productId} className="bg-white p-3 rounded-lg flex items-center space-x-3">
                       <img
-                        src={product.image_url}
+                        src={product.image_url || ''}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded-lg"
                       />
@@ -282,7 +270,7 @@ export const PromotionManager: React.FC = () => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                     placeholder="Ex: Promoção de Verão"
                   />
                 </div>
@@ -298,7 +286,7 @@ export const PromotionManager: React.FC = () => {
                     required
                     value={formData.discount_percentage}
                     onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-black"
                     placeholder="20"
                   />
                 </div>
@@ -340,7 +328,7 @@ export const PromotionManager: React.FC = () => {
                           className="text-red-600"
                         />
                         <img
-                          src={product.image_url}
+                          src={product.image_url || ''}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded-lg"
                         />
