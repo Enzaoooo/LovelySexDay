@@ -204,7 +204,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavi
               <Settings className="text-red-600 mr-3" size={24} />
               <div>
                 <h1 className="text-xl font-bold text-black">
-                  Painel Administrativo - Lovely Sex Day
+                  Painel Administrativo - <span translate="no">Lovely Sex Day</span>
                 </h1>
                 {currentSection !== 'dashboard' && (
                   <button

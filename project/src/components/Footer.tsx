@@ -28,7 +28,7 @@ export const Footer = () => {
       <div className="container-custom py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div>
-            <h3 className="font-display text-3xl font-bold mb-4 text-gold">
+            <h3 className="font-display text-3xl font-bold mb-4 text-gold" translate="no">
               {settings?.site_name || 'Lovely Sex Day'}
             </h3>
             <p className="text-neutral-400 mb-6 leading-relaxed font-light">

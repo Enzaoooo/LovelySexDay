@@ -92,7 +92,7 @@ export const Navbar = () => {
                     className="h-12 w-auto object-contain"
                   />
                 ) : (
-                  <h1 className="text-2xl md:text-3xl font-display font-bold text-white group-hover:text-gold transition-colors duration-300">
+                  <h1 className="text-2xl md:text-3xl font-display font-bold text-white group-hover:text-gold transition-colors duration-300" translate="no">
                     {settings?.site_name || 'Lovely Sex Day'}
                   </h1>
                 )}

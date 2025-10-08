@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
+import { isValidEmail, rateLimiter, generateCSRFToken, storeCSRFToken } from '../../lib/security';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -13,13 +14,34 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Generate CSRF token on component mount
+  useEffect(() => {
+    const token = generateCSRFToken();
+    storeCSRFToken(token);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    // Validate input
     if (!email.trim() || !password.trim()) {
       setError('Por favor, preencha todos os campos');
+      setLoading(false);
+      return;
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      setError('Por favor, insira um email válido');
+      setLoading(false);
+      return;
+    }
+
+    // Rate limiting: max 5 login attempts per minute per email
+    if (!rateLimiter.check(email, 5, 60000)) {
+      setError('Muitas tentativas de login. Tente novamente em 1 minuto.');
       setLoading(false);
       return;
     }
@@ -29,9 +51,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
       if (error) {
         throw error;
       }
+      // Clear rate limit on successful login
+      rateLimiter.clear(email);
       onLogin();
     } catch (error: any) {
-      console.error('Erro na autenticação:', error);
       setError(error.message || 'Credenciais inválidas');
     } finally {
       setLoading(false);
@@ -43,7 +66,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="text-center">
-            <h2 className="text-4xl font-bold text-white mb-2 font-serif">
+            <h2 className="text-4xl font-bold text-white mb-2 font-serif" translate="no">
               Lovely Sex Day
             </h2>
             <p className="text-white/80 text-lg">Painel Administrativo</p>

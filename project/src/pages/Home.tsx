@@ -109,7 +109,7 @@ export const Home = () => {
 
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center px-4 max-w-4xl mx-auto">
-              <h1 className="font-display text-4xl md:text-6xl lg:text-8xl xl:text-9xl font-bold text-white mb-4 md:mb-6 tracking-tight animate-fade-in">
+              <h1 className="font-display text-4xl md:text-6xl lg:text-8xl xl:text-9xl font-bold text-white mb-4 md:mb-6 tracking-tight animate-fade-in" translate="no">
                 {currentImage?.title || 'Lovely Sex Day'}
               </h1>
               <p className="text-base md:text-xl lg:text-2xl text-neutral-200 mb-6 md:mb-8 font-light tracking-wide animate-slide-up">
@@ -179,7 +179,7 @@ export const Home = () => {
               <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-gold" />
             </div>
             <p className="text-sm md:text-lg text-neutral-300 leading-relaxed font-light px-4">
-              Na Lovely Sex Day, acreditamos que a sensualidade é uma forma de arte.
+              Na <span translate="no">Lovely Sex Day</span>, acreditamos que a sensualidade é uma forma de arte.
               Cada produto é cuidadosamente selecionado para proporcionar experiências
               únicas e memoráveis. Explore nosso universo de luxo e sofisticação.
             </p>
