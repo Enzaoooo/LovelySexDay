@@ -24,6 +24,9 @@ export const Products = () => {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
     const urlSearchTerm = query.get('search');
     if (urlSearchTerm) {
       setSearchTerm(urlSearchTerm);
@@ -31,8 +34,10 @@ export const Products = () => {
     const urlCategory = query.get('category');
     if (urlCategory) {
       setSelectedCategory(urlCategory);
+    } else {
+      setSelectedCategory('all');
     }
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     applyFilters();
@@ -64,7 +69,8 @@ export const Products = () => {
     }
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.category_id === selectedCategory);
+      const categoryId = parseInt(selectedCategory, 10);
+      filtered = filtered.filter(p => p.category_id === categoryId);
     }
 
     if (priceRange !== 'all') {

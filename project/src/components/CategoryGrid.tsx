@@ -30,7 +30,7 @@ export const CategoryGrid = () => {
               {categories.map((category) => (
                 <a
                   key={category.id}
-                  href={`#/products?category=${category.slug}`}
+                  href={`#/products?category=${category.id}`}
                   className="group relative overflow-hidden aspect-square rounded-xl md:rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-gold transition-all duration-500 md:transform md:hover:-translate-y-2"
                 >
                   {category.image_url ? (

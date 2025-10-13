@@ -12,6 +12,8 @@ export const Home = () => {
   const [promotionalProducts, setPromotionalProducts] = useState<Product[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [mostAccessedProducts, setMostAccessedProducts] = useState<Product[]>([]);
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  const [categoryName, setCategoryName] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -69,6 +71,29 @@ export const Home = () => {
             .in('id', promoProductIds);
           if (promoProductsError) console.error('Promotional products error:', promoProductsError);
           if (promoProducts) setPromotionalProducts(promoProducts);
+        }
+      }
+
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name')
+        .limit(1);
+
+      if (categoriesError) console.error('Categories error:', categoriesError);
+
+      if (categories && categories.length > 0) {
+        const mainCategory = categories[0];
+        const { data: categoryProducts, error: categoryProductsError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category_id', mainCategory.id)
+          .limit(8);
+
+        if (categoryProductsError) console.error('Category products error:', categoryProductsError);
+
+        if (categoryProducts) {
+          setCategoryProducts(categoryProducts);
+          setCategoryName(mainCategory.name);
         }
       }
 
@@ -179,7 +204,7 @@ export const Home = () => {
               <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-gold" />
             </div>
             <p className="text-sm md:text-lg text-neutral-300 leading-relaxed font-light px-4">
-              Na <span translate="no">Lovely Sex Day</span>, acreditamos que a sensualidade é uma forma de arte.
+              <span translate="no">Na Lovely Sex Day</span>, acreditamos que a sensualidade é uma forma de arte.
               Cada produto é cuidadosamente selecionado para proporcionar experiências
               únicas e memoráveis. Explore nosso universo de luxo e sofisticação.
             </p>
@@ -198,6 +223,14 @@ export const Home = () => {
         products={mostAccessedProducts}
         promotions={promotions}
       />
+
+      {categoryProducts.length > 0 && (
+        <ProductScrollSection
+          title={categoryName}
+          products={categoryProducts}
+          promotions={promotions}
+        />
+      )}
 
       {promotionalProducts.length > 0 && (
         <ProductScrollSection
